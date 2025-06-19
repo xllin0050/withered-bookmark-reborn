@@ -1,0 +1,32 @@
+/* 內容腳本的樣式 */
+#withered-bookmark-recommendations {
+  animation: slideIn 0.3s ease-out;
+  position: relative;
+  z-index: 1000;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#withered-bookmark-recommendations:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+#withered-bookmark-recommendations a:hover {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+}
+
+/* 確保不會干擾原頁面樣式 */
+#withered-bookmark-recommendations * {
+  box-sizing: border-box;
+  line-height: normal;
+}
