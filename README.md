@@ -16,7 +16,7 @@
 - **後端**: Python (uv) + FastAPI + SQLite + scikit-learn
 - **前端**: Vue + TypeScript + TailwindCSS
 - **擴展程序**: Chrome Extension Manifest V3
-- **部署**: 本地開發 + 雲端部署
+- **部署**: 尚在規劃中
 
 ## 快速開始
 
@@ -26,20 +26,35 @@
 - Node.js 16+
 - Chrome 瀏覽器
 
+
 ### 本地開發
+
+#### 一鍵啟動
+
 ```bash
-# 1. 設定後端
+just install   # 安裝所有相依
+just dev       # 啟動後端與前端開發伺服器
+```
+
+#### 手動啟動方式（可選）
+
+```bash
+# 1. 後端
 cd backend
 uv venv
-uv pip install -e .
-uv run uvicorn app.main:app --reload --port 8000
+uv pip install -e ".[dev]"
+uv run -- uvicorn app.main:app --reload --port 8000
 
-# 2. 設定前端
+# 2. 前端
 cd frontend
 npm install
-npm start
+npm run dev
 
-# 3. 載入擴展程序
+# 3. 擴展程序（尚未啟用）
+# cd extension
+# npm install
+# npm run dev
+# 或手動載入 Chrome 擴展：
 # 在 Chrome 中打開 chrome://extensions/
 # 開啟開發者模式，載入 extension 資料夾
 ```

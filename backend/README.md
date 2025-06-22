@@ -18,20 +18,27 @@
 - **中文處理**: jieba
 - **機器學習**: scikit-learn
 
-## 安裝和執行
+## 安裝與執行
+
+### 使用 just（建議）
+
+```bash
+just install       # 安裝依賴
+just backend       # 啟動後端伺服器（透過 uv 虛擬環境）
+```
+
+### 手動方式（可選）
 
 ```bash
 # 初始化虛擬環境
+cd backend
 uv venv
 
-# 啟動虛擬環境
-.venv\Scripts\activate
-
 # 安裝依賴
-uv pip install -e .
+uv pip install -e ".[dev]"
 
-# 啟動開發伺服器
-uvicorn app.main:app --reload
+# 啟動開發伺服器（使用虛擬環境）
+uv run -- uvicorn app.main:app --reload --port 8000
 ```
 
 ## 開發
