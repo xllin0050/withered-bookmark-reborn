@@ -66,19 +66,19 @@
         <h3 class="text-lg font-semibold mb-4">快速統計</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="text-center">
-            <div class="text-2xl font-bold text-primary-600">{{ bookmarkCount }}</div>
+            <div class="text-2xl font-bold text-green-600">{{ bookmarkCount }}</div>
             <div class="text-sm text-gray-500">總書籤數</div>
           </div>
           <div class="text-center">
-            <div class="text-2xl font-bold text-primary-600">0</div>
+            <div class="text-2xl font-bold text-green-600">0</div>
             <div class="text-sm text-gray-500">今日搜尋</div>
           </div>
           <div class="text-center">
-            <div class="text-2xl font-bold text-primary-600">0</div>
+            <div class="text-2xl font-bold text-green-600">0</div>
             <div class="text-sm text-gray-500">推薦命中</div>
           </div>
           <div class="text-center">
-            <div class="text-2xl font-bold text-primary-600">0</div>
+            <div class="text-2xl font-bold text-green-600">0</div>
             <div class="text-sm text-gray-500">重新發現</div>
           </div>
         </div>
