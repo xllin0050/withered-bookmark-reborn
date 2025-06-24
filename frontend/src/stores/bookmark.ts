@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Bookmark } from '@/types/bookmark'
+import { bookmarkApi } from '@/services/api'
 
 export const useBookmarkStore = defineStore('bookmark', () => {
   // State
@@ -43,8 +44,21 @@ export const useBookmarkStore = defineStore('bookmark', () => {
     isLoading.value = loading
   }
 
-  function setError(newError: string | null) {
+    function setError(newError: string | null) {
     error.value = newError
+  }
+
+  async function fetchBookmarks() {
+    setLoading(true)
+    setError(null)
+    try {
+      const fetchedBookmarks = await bookmarkApi.getBookmarks()
+      setBookmarks(fetchedBookmarks)
+    } catch (e: any) {
+      setError(e.message || 'An unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return {
@@ -61,6 +75,7 @@ export const useBookmarkStore = defineStore('bookmark', () => {
     updateBookmark,
     setBookmarks,
     setLoading,
-    setError
+    setError,
+    fetchBookmarks,
   }
 })
