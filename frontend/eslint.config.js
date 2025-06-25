@@ -4,6 +4,7 @@ import {
   defineConfigWithVueTs,
   vueTsConfigs,
 } from "@vue/eslint-config-typescript";
+import eslintConfigPrettier from "@vue/eslint-config-prettier";
 
 export default defineConfigWithVueTs(
   // Vue 基本規則
@@ -32,5 +33,6 @@ export default defineConfigWithVueTs(
   // 忽略文件
   {
     ignores: ["dist/", "node_modules/", "*.d.ts"],
-  }
+  },
+  eslintConfigPrettier,
 );

@@ -15,25 +15,26 @@ async def lifespan(app):
     yield
     # 關閉時執行的清理程式碼
 
+
 app = FastAPI(
     title="Withered Bookmark Reborn API",
     description="枯枝逢生 - 後端API",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 
 # CORS 設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "chrome-extension://*"],
+    allow_origins=["http://localhost:3008", "http://localhost:5173", "chrome-extension://*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # 註冊路由
-app.include_router(bookmarks_router, prefix="/api/v1/bookmarks", tags=["bookmarks"])
+app.include_router(bookmarks_router, prefix="/api/v1", tags=["bookmarks"])
 app.include_router(search_router, prefix="/api/v1/search", tags=["search"])
 
 

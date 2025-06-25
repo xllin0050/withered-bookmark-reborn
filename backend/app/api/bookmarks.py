@@ -8,7 +8,7 @@ from app.models.schemas import BookmarkCreate, BookmarkResponse, BookmarkUpdate 
 
 router = APIRouter()
 
-@router.post("/", response_model=BookmarkResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/bookmarks", response_model=BookmarkResponse, status_code=status.HTTP_201_CREATED)
 async def create_bookmark(bookmark: BookmarkCreate, db: Session = Depends(get_db)):
     """創建新書籤"""
     try:
@@ -37,13 +37,13 @@ async def create_bookmark(bookmark: BookmarkCreate, db: Session = Depends(get_db
             detail=f"Error creating bookmark: {str(e)}"
         )
 
-@router.get("/", response_model=List[BookmarkResponse])
+@router.get("/bookmarks", response_model=List[BookmarkResponse])
 async def get_bookmarks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """獲取書籤列表"""
     bookmarks = db.query(Bookmark).offset(skip).limit(limit).all()
     return bookmarks
 
-@router.get("/{bookmark_id}", response_model=BookmarkResponse)
+@router.get("/bookmarks/{bookmark_id}", response_model=BookmarkResponse)
 async def get_bookmark(bookmark_id: int, db: Session = Depends(get_db)):
     """獲取單個書籤"""
     bookmark = db.query(Bookmark).filter(Bookmark.id == bookmark_id).first()
@@ -51,7 +51,7 @@ async def get_bookmark(bookmark_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Bookmark not found")
     return bookmark
 
-@router.put("/{bookmark_id}", response_model=BookmarkResponse)
+@router.put("/bookmarks/{bookmark_id}", response_model=BookmarkResponse)
 async def update_bookmark(bookmark_id: int, bookmark: BookmarkUpdate, db: Session = Depends(get_db)):
     """更新指定ID的書籤"""
     db_bookmark = db.query(Bookmark).filter(Bookmark.id == bookmark_id).first()
@@ -63,7 +63,7 @@ async def update_bookmark(bookmark_id: int, bookmark: BookmarkUpdate, db: Sessio
     db.refresh(db_bookmark)
     return db_bookmark
 
-@router.delete("/{bookmark_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/bookmarks/{bookmark_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_bookmark(bookmark_id: int, db: Session = Depends(get_db)):
     """刪除指定ID的書籤"""
     try:
