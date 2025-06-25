@@ -14,7 +14,7 @@ def test_create_bookmark_success(client, db_session):
         "description": "An example bookmark",
     }
 
-    response = client.post("/api/v1/bookmarks/", json=bookmark_data)
+    response = client.post("/api/v1/bookmarks", json=bookmark_data)
     assert response.status_code == status.HTTP_201_CREATED
 
     data = response.json()
@@ -34,17 +34,16 @@ def test_create_duplicate_bookmark(client, db_session):
         "title": "Duplicate",
         "description": "This is a duplicate",
     }
-    client.post("/api/v1/bookmarks/", json=bookmark_data)
-    response = client.post("/api/v1/bookmarks/", json=bookmark_data)
-    # 允許 400 或 500（因為部分實作會將 ValidationError 包成 500）
-    assert response.status_code in (status.HTTP_400_BAD_REQUEST, status.HTTP_500_INTERNAL_SERVER_ERROR)
-    assert "already exists" in response.json().get("detail", "")
+    client.post("/api/v1/bookmarks", json=bookmark_data)
+    response = client.post("/api/v1/bookmarks", json=bookmark_data)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "Bookmark with this URL already exists"
 
 
 # 測試取得所有書籤
 def test_get_bookmarks(client, test_bookmark):
     """測試取得所有書籤"""
-    response = client.get("/api/v1/bookmarks/")
+    response = client.get("/api/v1/bookmarks")
     assert response.status_code == status.HTTP_200_OK
 
     bookmarks = response.json()
@@ -79,7 +78,7 @@ def test_create_bookmark_missing_field(client, missing_field):
     """測試建立書籤時缺少必要欄位"""
     data = {"url": "https://miss.com", "title": "標題", "description": "desc"}
     data.pop(missing_field)
-    response = client.post("/api/v1/bookmarks/", json=data)
+    response = client.post("/api/v1/bookmarks", json=data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 # 測試欄位型態錯誤
@@ -92,7 +91,7 @@ def test_create_bookmark_invalid_type(client, field, value):
     """測試建立書籤時欄位型態錯誤"""
     data = {"url": "https://type.com", "title": "標題", "description": "desc"}
     data[field] = value
-    response = client.post("/api/v1/bookmarks/", json=data)
+    response = client.post("/api/v1/bookmarks", json=data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 

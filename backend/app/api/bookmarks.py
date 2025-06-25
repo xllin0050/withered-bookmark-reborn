@@ -29,6 +29,9 @@ async def create_bookmark(bookmark: BookmarkCreate, db: Session = Depends(get_db
         db.commit()
         db.refresh(db_bookmark)
         return db_bookmark
+    except HTTPException as http_exc:
+        db.rollback()
+        raise http_exc
     except Exception as e:
         db.rollback()
         print(f"Error creating bookmark: {str(e)}")  # 在日誌中記錄錯誤

@@ -18,6 +18,10 @@ frontend:
 # extension:
 #   cd extension && npm run dev
 
+# 🧪 執行後端測試
+test-backend:
+  cd backend && uv run pytest
+
 # ⚡ 一鍵啟動所有服務
 dev:
   just -j 3 backend &
