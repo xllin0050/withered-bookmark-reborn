@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Bookmark } from '@/types/bookmark'
+import type { Bookmark, BookmarkCreate } from '@/types/bookmark'
 import { bookmarkApi } from '@/services/api'
 
 export const useBookmarkStore = defineStore('bookmark', () => {
@@ -44,16 +44,56 @@ export const useBookmarkStore = defineStore('bookmark', () => {
     isLoading.value = loading
   }
 
-    function setError(newError: string | null) {
+  function setError(newError: string | null) {
     error.value = newError
   }
 
-  async function fetchBookmarks() {
+  async function fetchBookmarkData() {
     setLoading(true)
     setError(null)
     try {
       const fetchedBookmarks = await bookmarkApi.getBookmarks()
       setBookmarks(fetchedBookmarks)
+    } catch (e: any) {
+      setError(e.message || 'An unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function createBookmarkData(bookmark: BookmarkCreate) {
+    setLoading(true)
+    setError(null)
+    try {
+      const createdBookmark = await bookmarkApi.createBookmark(bookmark)
+      addBookmark(createdBookmark)
+    } catch (e: any) {
+      setError(e.message || 'An unknown error occurred')
+      throw e
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function deleteBookmarkData(id: number) {
+    setLoading(true)
+    setError(null)
+    try {
+      await bookmarkApi.deleteBookmark(id)
+      removeBookmark(id)
+    } catch (e: any) {
+      setError(e.message || 'An unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function updateBookmarkData(id: number, updates: Partial<Bookmark>) {
+    setLoading(true)
+    setError(null)
+    try {
+      const updatedBookmark = await bookmarkApi.updateBookmark(id, updates)
+      updateBookmark(id, updatedBookmark)
     } catch (e: any) {
       setError(e.message || 'An unknown error occurred')
     } finally {
@@ -76,6 +116,10 @@ export const useBookmarkStore = defineStore('bookmark', () => {
     setBookmarks,
     setLoading,
     setError,
-    fetchBookmarks,
+    // API
+    fetchBookmarkData,
+    createBookmarkData,
+    deleteBookmarkData,
+    updateBookmarkData,
   }
 })

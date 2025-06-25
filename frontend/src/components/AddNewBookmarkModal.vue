@@ -35,6 +35,9 @@
             class="input-field"
           ></textarea>
         </form>
+        <div v-if="errorMessage" class="text-red-500 mb-2">
+          {{ errorMessage }}
+        </div>
       </div>
       <div class="p-4 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
         <button @click="closeModal" class="btn-secondary">取消</button>
@@ -46,12 +49,16 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useBookmarkStore } from '@/stores/bookmark';
+
 defineProps({
   show: {
     type: Boolean,
     required: true,
   },
 })
+
+const bookmarkStore = useBookmarkStore()
 
 const emit = defineEmits(['close'])
 
@@ -61,14 +68,32 @@ const newBookmark = ref({
   description: '',
 })
 
+const errorMessage=ref<string | null>(null)
+
 const closeModal = () => {
+  errorMessage.value = null
   emit('close')
 }
 
-const saveBookmark = () => {
-  // TODO: Implement bookmark saving logic
-  console.log('Bookmark saved!')
+const saveBookmark = async () => {
+  errorMessage.value = null
+
+if (!newBookmark.value.url.trim()) {
+  errorMessage.value = 'URL field cannot be empty.'
+  return
+}
+
+try {
+  await bookmarkStore.createBookmarkData(newBookmark.value)
   closeModal()
+} catch (error: any) {
+  if (error.response && error.response.status === 422 && error.response.data.detail) {
+      const firstError = error.response.data.detail[0]
+      errorMessage.value = `Error: ${firstError.msg}`
+    } else {
+      errorMessage.value = 'Could not save the bookmark. Please try again later.'
+    }
+}
 }
 </script>
 <style scoped>
@@ -76,4 +101,5 @@ form input,
 textarea {
   margin-bottom: 1em;
 }
+
 </style>

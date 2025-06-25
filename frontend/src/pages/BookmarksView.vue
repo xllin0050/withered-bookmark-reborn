@@ -25,6 +25,9 @@
           <h3>{{ bookmark.title }}</h3>
           <p>{{ bookmark.description }}</p>
           <a :href="bookmark.url" target="_blank">link</a>
+          <button @click="openUpdateModal(bookmark)">Update</button>
+ 
+          <button @click="deleteBookmark(bookmark.id)">Delete</button>
         </div>
       </li>
     </ul>
@@ -32,15 +35,26 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useBookmarkStore } from '@/stores/bookmark';
+import type { Bookmark } from '@/types/bookmark';
 
 const bookmarkStore = useBookmarkStore();
+
+const deleteBookmark = (id: number) => {
+  bookmarkStore.deleteBookmarkData(id);
+};
+
+const updateModalShow = ref(false);
+
+const openUpdateModal = (bookmark: Bookmark) => {
+  updateModalShow.value = true;
+};
 
 onMounted(() => {
   // Fetch bookmarks only if the list is empty to avoid redundant API calls
   if (bookmarkStore.bookmarks.length === 0) {
-    bookmarkStore.fetchBookmarks();
+    bookmarkStore.fetchBookmarkData();
   }
 });
 </script>
