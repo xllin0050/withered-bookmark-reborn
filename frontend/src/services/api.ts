@@ -29,7 +29,7 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error)
-    return Promise.reject(error)
+    return bookmarkApi.handleError(error)
   }
 )
 
@@ -67,7 +67,29 @@ export const bookmarkApi = {
   // 分析 URL
   async analyzeUrl(url: string): Promise<AnalyzeUrlResponse> {
     return api.post('/search/analyze-url', { url })
+  },
+
+  // 豐富化書籤內容
+  async enrichBookmark(id: number): Promise<void> {
+    return api.post(`/bookmarks/${id}/enrich`)
+  },
+
+  // 增加更好的錯誤處理
+  async handleError(error: any) {
+    if (error.response) {
+      // 處理 422 驗證錯誤
+      if (error.response.status === 422 && error.response.data.detail) {
+        const errorDetails = error.response.data.detail
+        if (Array.isArray(errorDetails)) {
+          return Promise.reject(new Error(errorDetails.map(d => d.msg).join('\n')))
+        }
+      }
+      // 處理其他錯誤
+      return Promise.reject(new Error(error.response.data.detail || 'An error occurred'))
+    }
+    return Promise.reject(error)
   }
+
 }
 
 export default api

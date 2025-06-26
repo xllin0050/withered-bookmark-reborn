@@ -11,7 +11,7 @@ export const useBookmarkStore = defineStore('bookmark', () => {
 
   // Getters
   const bookmarkCount = computed(() => bookmarks.value.length)
-  const recentBookmarks = computed(() => 
+  const recentBookmarks = computed(() =>
     bookmarks.value
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 10)
@@ -67,6 +67,8 @@ export const useBookmarkStore = defineStore('bookmark', () => {
     try {
       const createdBookmark = await bookmarkApi.createBookmark(bookmark)
       addBookmark(createdBookmark)
+      // 觸發背景內容豐富化
+      enrichBookmarkContent(createdBookmark.id)
     } catch (e: any) {
       setError(e.message || 'An unknown error occurred')
       throw e
@@ -96,6 +98,20 @@ export const useBookmarkStore = defineStore('bookmark', () => {
       updateBookmark(id, updatedBookmark)
     } catch (e: any) {
       setError(e.message || 'An unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function enrichBookmarkContent(bookmarkId: number) {
+    setLoading(true)
+    setError(null)
+    try {
+      await bookmarkApi.enrichBookmark(bookmarkId)
+      // 重新獲取書籤列表以更新資料
+      await fetchBookmarkData()
+    } catch (e: any) {
+      setError(e.message || 'Failed to enrich bookmark content')
     } finally {
       setLoading(false)
     }
