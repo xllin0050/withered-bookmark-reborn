@@ -122,8 +122,10 @@ async def enrich_bookmark(
     return {"message": "Content enrichment started"}
 
 
-async def enrich_bookmark_content(bookmark_id: int, url: str):
+def enrich_bookmark_content(bookmark_id: int, url: str):
     """背景任務：抓取並處理網頁內容"""
+    import asyncio
+
     from app.models.database import SessionLocal
 
     db = SessionLocal()
@@ -133,16 +135,14 @@ async def enrich_bookmark_content(bookmark_id: int, url: str):
         if not bookmark:
             return
 
-        # 抓取內容
-        content_data = await content_enricher.extract_content(url)
+        # 抓取內容 - 在同步函數中執行異步操作
+        content_data = asyncio.run(content_enricher.extract_content(url))
 
         if content_data:
             # 更新書籤
-            import json
-
             bookmark.content = content_data.get("content", "")
-            # keywords 轉為 JSON 字串存入
-            bookmark.keywords = json.dumps(content_data.get("keywords", []), ensure_ascii=False)
+            # 直接將列表賦值給 JSON 欄位
+            bookmark.keywords = content_data.get("keywords", [])
             if content_data.get("title") and not bookmark.title:
                 bookmark.title = content_data["title"]
             if content_data.get("description") and not bookmark.description:
