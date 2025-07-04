@@ -1,21 +1,14 @@
 <template>
   <div class="min-h-screen bg-yi">
     <!-- 導航欄 -->
-    <nav class="bg-si shadow-sm border-b">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <h1 class="text-xl font-bold text-gray-900">枯枝逢生</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <RouterLink to="/search" class="btn-secondary"> 搜尋 </RouterLink>
-            <RouterLink to="/bookmarks" class="btn-primary">
-              我的書籤
-            </RouterLink>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <TheHeader>
+      <template #actions>
+        <RouterLink to="/search" class="btn-secondary"> 搜尋 </RouterLink>
+        <RouterLink to="/bookmarks" class="btn-primary">
+          我的書籤
+        </RouterLink>
+      </template>
+    </TheHeader>
 
     <!-- 主要內容 -->
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -89,6 +82,7 @@ import { RouterLink } from 'vue-router'
 import { useBookmarkStore } from '@/stores/bookmark'
 import { storeToRefs } from 'pinia'
 import AddNewBookmarkModal from '@/components/AddNewBookmarkModal.vue'
+import TheHeader from '@/components/base/TheHeader.vue'
 
 const bookmarkStore = useBookmarkStore()
 const { bookmarkCount } = storeToRefs(bookmarkStore)

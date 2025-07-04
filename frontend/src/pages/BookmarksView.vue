@@ -1,19 +1,12 @@
 <template>
   <div>
     <!-- 導航欄 -->
-    <nav class="bg-si border-b shadow-sm">
-      <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div class="flex h-16 justify-between">
-          <div class="flex items-center">
-            <h1 class="text-xl font-bold text-gray-900">枯枝逢生</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <RouterLink to="/search" class="btn-secondary"> 搜尋 </RouterLink>
-            <RouterLink to="/" class="btn-primary"> 首頁 </RouterLink>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <TheHeader>
+      <template #actions>
+        <RouterLink to="/search" class="btn-secondary"> 搜尋 </RouterLink>
+        <RouterLink to="/" class="btn-primary"> 首頁 </RouterLink>
+      </template>
+    </TheHeader>
     <h1 class="text-center">Bookmarks</h1>
     <div v-if="bookmarkStore.isLoading">Loading...</div>
     <div v-else-if="bookmarkStore.error">Error: {{ bookmarkStore.error }}</div>
@@ -63,9 +56,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { RouterLink } from 'vue-router';
 import { useBookmarkStore } from "@/stores/bookmark";
 import type { Bookmark } from "@/types/bookmark";
 import UpdateBookmarkModal from "@/components/UpdateBookmarkModal.vue";
+import TheHeader from '@/components/base/TheHeader.vue';
 
 const bookmarkStore = useBookmarkStore();
 
