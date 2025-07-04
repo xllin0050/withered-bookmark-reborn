@@ -1,119 +1,123 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { Bookmark, BookmarkCreate } from '@/types/bookmark'
-import { bookmarkApi } from '@/services/api'
+import { defineStore } from "pinia";
+import { ref, computed } from "vue";
+import type { Bookmark, BookmarkCreate } from "@/types/bookmark";
+import { bookmarkApi } from "@/services/api";
 
-export const useBookmarkStore = defineStore('bookmark', () => {
+export const useBookmarkStore = defineStore("bookmark", () => {
   // State
-  const bookmarks = ref<Bookmark[]>([])
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
+  const bookmarks = ref<Bookmark[]>([]);
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
 
   // Getters
-  const bookmarkCount = computed(() => bookmarks.value.length)
+  const bookmarkCount = computed(() => bookmarks.value.length);
   const recentBookmarks = computed(() =>
     bookmarks.value
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10)
-  )
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
+      .slice(0, 10),
+  );
 
   // Actions
   function addBookmark(bookmark: Bookmark) {
-    bookmarks.value.unshift(bookmark)
+    bookmarks.value.unshift(bookmark);
   }
 
   function removeBookmark(id: number) {
-    const index = bookmarks.value.findIndex(b => b.id === id)
+    const index = bookmarks.value.findIndex((b) => b.id === id);
     if (index > -1) {
-      bookmarks.value.splice(index, 1)
+      bookmarks.value.splice(index, 1);
     }
   }
 
   function updateBookmark(id: number, updates: Partial<Bookmark>) {
-    const bookmark = bookmarks.value.find(b => b.id === id)
-    if (bookmark) {
-      Object.assign(bookmark, updates)
+    const bookmark = bookmarks.value.find((b) => b.id === id);
+    if (!bookmark) {
+      return false;
     }
+    Object.assign(bookmark, updates);
   }
 
   function setBookmarks(newBookmarks: Bookmark[]) {
-    bookmarks.value = newBookmarks
+    bookmarks.value = newBookmarks;
   }
 
   function setLoading(loading: boolean) {
-    isLoading.value = loading
+    isLoading.value = loading;
   }
 
   function setError(newError: string | null) {
-    error.value = newError
+    error.value = newError;
   }
 
   async function fetchBookmarkData() {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const fetchedBookmarks = await bookmarkApi.getBookmarks()
-      setBookmarks(fetchedBookmarks)
+      const fetchedBookmarks = await bookmarkApi.getBookmarks();
+      setBookmarks(fetchedBookmarks);
     } catch (e: any) {
-      setError(e.message || 'An unknown error occurred')
+      setError(e.message || "An unknown error occurred");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function createBookmarkData(bookmark: BookmarkCreate) {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const createdBookmark = await bookmarkApi.createBookmark(bookmark)
-      addBookmark(createdBookmark)
+      const createdBookmark = await bookmarkApi.createBookmark(bookmark);
+      addBookmark(createdBookmark);
       // 觸發背景內容豐富化
-      enrichBookmarkContent(createdBookmark.id)
+      enrichBookmarkContent(createdBookmark.id);
     } catch (e: any) {
-      setError(e.message || 'An unknown error occurred')
-      throw e
+      setError(e.message || "An unknown error occurred");
+      throw e;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function deleteBookmarkData(id: number) {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      await bookmarkApi.deleteBookmark(id)
-      removeBookmark(id)
+      await bookmarkApi.deleteBookmark(id);
+      removeBookmark(id);
     } catch (e: any) {
-      setError(e.message || 'An unknown error occurred')
+      setError(e.message || "An unknown error occurred");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function updateBookmarkData(id: number, updates: Partial<Bookmark>) {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const updatedBookmark = await bookmarkApi.updateBookmark(id, updates)
-      updateBookmark(id, updatedBookmark)
+      const updatedBookmark = await bookmarkApi.updateBookmark(id, updates);
+      updateBookmark(id, updatedBookmark);
     } catch (e: any) {
-      setError(e.message || 'An unknown error occurred')
+      setError(e.message || "An unknown error occurred");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function enrichBookmarkContent(bookmarkId: number) {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      await bookmarkApi.enrichBookmark(bookmarkId)
+      await bookmarkApi.enrichBookmark(bookmarkId);
       // 重新獲取書籤列表以更新資料
-      await fetchBookmarkData()
+      await fetchBookmarkData();
     } catch (e: any) {
-      setError(e.message || 'Failed to enrich bookmark content')
+      setError(e.message || "Failed to enrich bookmark content");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -137,5 +141,5 @@ export const useBookmarkStore = defineStore('bookmark', () => {
     createBookmarkData,
     deleteBookmarkData,
     updateBookmarkData,
-  }
-})
+  };
+});

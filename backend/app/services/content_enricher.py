@@ -2,7 +2,7 @@ import asyncio
 import json
 import re
 from typing import Dict, List, Optional
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import jieba
@@ -89,6 +89,7 @@ class ContentEnricher:
             # 提取基本資訊
             title = self._extract_title(soup)
             description = self._extract_description(soup)
+            image_url = self._extract_image_url(soup, url)
             content = self._extract_main_content(soup)
 
             # 清理內容文字
@@ -103,6 +104,7 @@ class ContentEnricher:
             return {
                 "title": title,
                 "description": description or summary,  # 如果沒有 description，使用摘要
+                "image_url": image_url,
                 "content": clean_content,
                 "keywords": keywords,  # 直接返回列表
                 "summary": summary,
@@ -169,6 +171,38 @@ class ContentEnricher:
         meta_desc = soup.find("meta", attrs={"name": "description"})
         if meta_desc and meta_desc.get("content"):
             return meta_desc["content"].strip()
+
+        return None
+
+    def _extract_image_url(self, soup: BeautifulSoup, base_url: str) -> Optional[str]:
+        """提取網頁的代表性圖片 URL"""
+        # 1. 優先使用 og:image
+        og_image = soup.find("meta", property="og:image")
+        if og_image and og_image.get("content"):
+            return urljoin(base_url, og_image["content"])
+
+        # 2. 其次使用 twitter:image
+        twitter_image = soup.find("meta", attrs={"name": "twitter:image"})
+        if twitter_image and twitter_image.get("content"):
+            return urljoin(base_url, twitter_image["content"])
+
+        # 3. 接著使用 <link rel="image_src">
+        image_src_link = soup.find("link", rel="image_src")
+        if image_src_link and image_src_link.get("href"):
+            return urljoin(base_url, image_src_link["href"])
+
+        # 4. 最後嘗試尋找 favicon
+        apple_touch_icon = soup.find("link", rel="apple-touch-icon")
+        if apple_touch_icon and apple_touch_icon.get("href"):
+            return urljoin(base_url, apple_touch_icon["href"])
+
+        favicon_link = soup.find("link", rel="icon")
+        if favicon_link and favicon_link.get("href"):
+            return urljoin(base_url, favicon_link["href"])
+
+        shortcut_icon = soup.find("link", rel="shortcut icon")
+        if shortcut_icon and shortcut_icon.get("href"):
+            return urljoin(base_url, shortcut_icon["href"])
 
         return None
 
