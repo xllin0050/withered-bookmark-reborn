@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",
+    "animejs": "^4.0.2",
     "axios": "^1.6.0",
     "pinia": "^3.0.3",
     "tailwindcss": "^4.1.10",

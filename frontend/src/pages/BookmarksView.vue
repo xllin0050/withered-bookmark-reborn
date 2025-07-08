@@ -37,11 +37,11 @@
                 Delete
               </button>
             </div>
-            <div class="mt-4 flex space-x-2">
+            <!-- <div class="mt-4 flex space-x-2">
               <div v-for="keyword in bookmark.keywords" :key="keyword">
                 <span class="rounded bg-gray-200 px-2 py-1">{{ keyword }}</span>
               </div>
-            </div>
+            </div> -->
           </div>
         </li>
       </ul>
@@ -56,11 +56,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { RouterLink } from 'vue-router';
+import { RouterLink } from "vue-router";
 import { useBookmarkStore } from "@/stores/bookmark";
 import type { Bookmark } from "@/types/bookmark";
 import UpdateBookmarkModal from "@/components/UpdateBookmarkModal.vue";
-import TheHeader from '@/components/base/TheHeader.vue';
+import TheHeader from "@/components/base/TheHeader.vue";
 
 const bookmarkStore = useBookmarkStore();
 

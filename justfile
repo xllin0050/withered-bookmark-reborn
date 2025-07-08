@@ -22,11 +22,9 @@ frontend:
 test-backend:
   cd backend && uv run pytest
 
-# ⚡ 一鍵啟動所有服務
+# 使用 xargs 實現並行執行
 dev:
-  just -j 3 backend &
-  just frontend &
-  # just extension
+  echo "backend frontend" | xargs -n 1 -P 2 just
 
 # 🧹 清除快取與輸出（視情況加入）
 clean:
