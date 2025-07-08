@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.models.database import Bookmark, get_db
 from app.models.schemas import BookmarkCreate, BookmarkResponse, BookmarkUpdate  # noqa: F401
+from app.services.bookmark_importer import parse_and_import_bookmarks
 from app.services.content_enricher import ContentEnricher
 
 router = APIRouter()
@@ -104,6 +105,42 @@ async def delete_bookmark(bookmark_id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting bookmark: {str(e)}",
+        )
+
+
+@router.post("/bookmarks/upload", status_code=status.HTTP_201_CREATED)
+async def upload_bookmarks_file(
+    background_tasks: BackgroundTasks, file: UploadFile = File(...), db: Session = Depends(get_db)
+):
+    """
+    上傳並匯入書籤檔案 (HTML 格式)。
+    """
+    if not file.filename.endswith(".html"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Please upload an HTML file.",
+        )
+
+    try:
+        # 呼叫服務層的函式來處理檔案
+        imported_bookmarks = parse_and_import_bookmarks(db, file.file)
+
+        # 為每個新書籤添加背景豐富化任務
+        for bookmark_info in imported_bookmarks:
+            background_tasks.add_task(
+                enrich_bookmark_content, bookmark_id=bookmark_info["id"], url=bookmark_info["url"]
+            )
+
+        imported_count = len(imported_bookmarks)
+        return {
+            "message": f"Successfully imported {imported_count} bookmarks. Enrichment tasks are running in the background.",
+            "count": imported_count,
+        }
+    except Exception as e:
+        # 捕獲服務層可能拋出的任何異常
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while processing the file: {str(e)}",
         )
 
 

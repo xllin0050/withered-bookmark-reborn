@@ -107,6 +107,21 @@ export const useBookmarkStore = defineStore("bookmark", () => {
     }
   }
 
+  async function uploadBookmarksFile(file: File) {
+    setLoading(true);
+    setError(null);
+    try {
+      await bookmarkApi.uploadBookmarks(file);
+      await fetchBookmarkData(); // 上傳成功後刷新列表
+    } catch (e: any) {
+      const errorMessage = e.response?.data?.detail || e.message || "File upload failed";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function enrichBookmarkContent(bookmarkId: number) {
     setLoading(true);
     setError(null);
@@ -141,5 +156,6 @@ export const useBookmarkStore = defineStore("bookmark", () => {
     createBookmarkData,
     deleteBookmarkData,
     updateBookmarkData,
+    uploadBookmarksFile,
   };
 });

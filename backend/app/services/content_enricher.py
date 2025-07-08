@@ -125,7 +125,9 @@ class ContentEnricher:
             網頁 HTML 內容，或 None（如果抓取失敗）
         """
         try:
-            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            async with aiohttp.ClientSession(
+                timeout=self.timeout, cookie_jar=aiohttp.CookieJar(unsafe=True)
+            ) as session:
                 async with session.get(url, headers=self.headers) as response:
                     if response.status == 200:
                         # 自動偵測編碼

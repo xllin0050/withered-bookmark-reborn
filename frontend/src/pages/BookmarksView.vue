@@ -8,6 +8,22 @@
       </template>
     </TheHeader>
     <h1 class="text-center">Bookmarks</h1>
+    <div class="my-4 mx-auto max-w-4xl text-center">
+      <input
+        type="file"
+        ref="fileInput"
+        @change="onFileChange"
+        accept=".html,.json"
+        class="mb-2"
+      />
+      <button
+        @click="uploadFile"
+        class="btn-primary"
+        :disabled="!selectedFile || bookmarkStore.isLoading"
+      >
+        上傳書籤檔
+      </button>
+    </div>
     <div v-if="bookmarkStore.isLoading">Loading...</div>
     <div v-else-if="bookmarkStore.error">Error: {{ bookmarkStore.error }}</div>
     <div v-else>
@@ -66,6 +82,28 @@ const bookmarkStore = useBookmarkStore();
 
 const updateModalShow = ref(false);
 const selectedBookmark = ref<Bookmark | null>(null);
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const selectedFile = ref<File | null>(null);
+
+const onFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files.length > 0) {
+    selectedFile.value = target.files[0];
+  } else {
+    selectedFile.value = null;
+  }
+};
+
+const uploadFile = async () => {
+  if (selectedFile.value) {
+    await bookmarkStore.uploadBookmarksFile(selectedFile.value);
+    selectedFile.value = null;
+    if (fileInput.value) {
+      fileInput.value.value = "";
+    }
+  }
+};
 
 const deleteBookmark = (id: number) => {
   bookmarkStore.deleteBookmarkData(id);

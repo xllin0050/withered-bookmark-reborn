@@ -74,6 +74,18 @@ export const bookmarkApi = {
     return api.post(`/bookmarks/${id}/enrich`)
   },
 
+  // 上傳書籤檔案
+  async uploadBookmarks(file: File): Promise<{ message: string; count: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return api.post('/bookmarks/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
   // 增加更好的錯誤處理
   async handleError(error: any) {
     if (error.response) {
