@@ -8,7 +8,7 @@
       </template>
     </TheHeader>
     <h1 class="text-center">Bookmarks</h1>
-    <div class="my-4 mx-auto max-w-4xl text-center">
+    <div class="mx-auto my-4 max-w-4xl text-center">
       <input
         type="file"
         ref="fileInput"
@@ -27,40 +27,43 @@
     <div v-if="bookmarkStore.isLoading">Loading...</div>
     <div v-else-if="bookmarkStore.error">Error: {{ bookmarkStore.error }}</div>
     <div v-else>
-      <ul class="mx-auto max-w-4xl">
-        <li
-          v-for="bookmark in bookmarkStore.bookmarks"
-          :key="bookmark.id"
-          class="border border-b-0 last:border-b"
-        >
-          <div class="p-4">
-            <h3 class="text-lg font-semibold">{{ bookmark.title }}</h3>
-            <p class="mt-2 text-sm text-gray-600">{{ bookmark.description }}</p>
-            <div class="mt-2 flex space-x-2">
-              <a class="btn-shape block" :href="bookmark.url" target="_blank"
-                >link</a
-              >
-              <button
-                class="btn-shape text-green-600"
-                @click="updateBookmark(bookmark)"
-              >
-                Update
-              </button>
-              <button
-                class="btn-shape text-red-600"
-                @click="deleteBookmark(bookmark.id)"
-              >
-                Delete
-              </button>
+      <DynamicScroller
+        class="scroller mx-auto max-w-4xl"
+        :items="bookmarkStore.bookmarks"
+        :min-item-size="200"
+        key-field="id"
+        v-slot="{ item }"
+      >
+        <template v-slot="{ item, index, active }">
+          <DynamicScrollerItem
+            :item-size="200"
+            :item-data="item"
+            :active="true"
+            :key-field="'id'"
+          >
+            <div class="bg-si border-er hover:border-yi h-45">
+              <a :href="item.url" target="_blank" class="block p-4">
+                <h3 class="text-lg font-semibold">{{ item.title }}</h3>
+                <p class="mt-2 text-sm text-gray-600">{{ item.description }}</p>
+                <div class="mt-2 flex justify-end space-x-2">
+                  <button
+                    class="btn-shape bg-er text-si"
+                    @click.prevent="updateBookmark(item)"
+                  >
+                    Update
+                  </button>
+                  <button
+                    class="btn-shape bg-amber-400 text-red-600"
+                    @click.prevent="deleteBookmark(item.id)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </a>
             </div>
-            <!-- <div class="mt-4 flex space-x-2">
-              <div v-for="keyword in bookmark.keywords" :key="keyword">
-                <span class="rounded bg-gray-200 px-2 py-1">{{ keyword }}</span>
-              </div>
-            </div> -->
-          </div>
-        </li>
-      </ul>
+          </DynamicScrollerItem>
+        </template>
+      </DynamicScroller>
     </div>
     <UpdateBookmarkModal
       :show="updateModalShow"
@@ -125,3 +128,9 @@ onMounted(() => {
   }
 });
 </script>
+
+<style scoped>
+.scroller {
+  height: calc(100vh - 200px); /* 給予一個明確的高度，否則無法顯示 */
+}
+</style>
