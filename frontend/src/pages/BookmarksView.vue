@@ -7,63 +7,78 @@
         <RouterLink to="/" class="btn-primary"> 首頁 </RouterLink>
       </template>
     </TheHeader>
-    <h1 class="text-center">Bookmarks</h1>
+    <h1 class="pt-4 text-center">Bookmarks</h1>
     <div class="mx-auto my-4 max-w-4xl text-center">
-      <input
-        type="file"
-        ref="fileInput"
-        @change="onFileChange"
-        accept=".html,.json"
-        class="mb-2"
-      />
+      <div class="file-upload mb-4 flex flex-col items-center">
+        <input
+          type="file"
+          ref="fileInput"
+          @change="onFileChange"
+          accept=".html,.json"
+          class="hidden"
+          id="customFileInput"
+        />
+        <label
+          for="customFileInput"
+          class="btn-shape bg-si w-36 cursor-pointer"
+        >
+          選擇檔案
+        </label>
+        <span v-if="selectedFile" class="mt-2 text-sm">{{
+          selectedFile.name
+        }}</span>
+      </div>
       <button
+        v-if="selectedFile"
         @click="uploadFile"
-        class="btn-primary"
-        :disabled="!selectedFile || bookmarkStore.isLoading"
+        class="btn-shape w-36 bg-gradient-to-r from-amber-400 to-orange-600 text-white"
+        :disabled="bookmarkStore.isLoading"
       >
-        上傳書籤檔
+        開始上傳
       </button>
     </div>
     <div v-if="bookmarkStore.isLoading">Loading...</div>
     <div v-else-if="bookmarkStore.error">Error: {{ bookmarkStore.error }}</div>
     <div v-else>
-      <DynamicScroller
-        class="scroller mx-auto max-w-4xl"
+      <RecycleScroller
+        ref="scroller"
+        class="scroller"
         :items="bookmarkStore.bookmarks"
-        :min-item-size="200"
+        :item-size="100"
         key-field="id"
-        v-slot="{ item }"
+        :buffer="200"
       >
-        <template v-slot="{ item, index, active }">
-          <DynamicScrollerItem
-            :item-size="200"
-            :item-data="item"
-            :active="true"
-            :key-field="'id'"
-          >
-            <div class="bg-si border-er hover:border-yi h-45">
-              <a :href="item.url" target="_blank" class="block p-4">
-                <h3 class="text-lg font-semibold">{{ item.title }}</h3>
-                <p class="mt-2 text-sm text-gray-600">{{ item.description }}</p>
-                <div class="mt-2 flex justify-end space-x-2">
-                  <button
-                    class="btn-shape bg-er text-si"
-                    @click.prevent="updateBookmark(item)"
-                  >
-                    Update
-                  </button>
-                  <button
-                    class="btn-shape bg-amber-400 text-red-600"
-                    @click.prevent="deleteBookmark(item.id)"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </a>
-            </div>
-          </DynamicScrollerItem>
+        <template #default="props">
+          <div class="bg-si border-er hover:border-yi group h-24">
+            <a
+              :href="props.item.url"
+              target="_blank"
+              class="relative block h-full w-full p-4"
+            >
+              <h3 class="text-lg font-semibold">{{ props.item.title }}</h3>
+              <p class="mt-2 text-sm text-gray-600">
+                {{ props.item.description }}
+              </p>
+              <div
+                class="absolute top-1/2 right-0 hidden -translate-y-1/2 p-2 group-hover:block"
+              >
+                <button
+                  class="btn-shape bg-er text-si mr-2"
+                  @click.prevent="updateBookmark(props.item)"
+                >
+                  Update
+                </button>
+                <button
+                  class="btn-shape bg-amber-400 text-red-600"
+                  @click.prevent="deleteBookmark(props.item.id)"
+                >
+                  Delete
+                </button>
+              </div>
+            </a>
+          </div>
         </template>
-      </DynamicScroller>
+      </RecycleScroller>
     </div>
     <UpdateBookmarkModal
       :show="updateModalShow"
@@ -131,6 +146,7 @@ onMounted(() => {
 
 <style scoped>
 .scroller {
-  height: calc(100vh - 200px); /* 給予一個明確的高度，否則無法顯示 */
+  width: 100%;
+  height: calc(100vh - 300px);
 }
 </style>
