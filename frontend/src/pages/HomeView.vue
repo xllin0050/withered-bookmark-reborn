@@ -12,8 +12,10 @@
     <main class="flex max-w-4xl flex-grow flex-col px-4 py-12 sm:px-6 lg:px-8">
       <!-- Hero Section -->
       <div class="mb-12 text-center">
-        <h2 class="mb-8 text-2xl font-bold sm:text-4xl">
-          讓沉睡的書籤重新發揮價值
+        <h2 class="py-8 text-2xl font-bold sm:text-4xl">
+          <span>讓</span><span>沉</span><span>睡</span><span>的</span
+          ><span>書</span><span>籤</span><span>重</span><span>新</span
+          ><span>發</span><span>揮</span><span>價</span><span>值</span>
         </h2>
         <p class="mb-8 text-base text-gray-600">
           在你搜尋時自動推薦相關的已收藏內容，<br />智能書籤助手讓知識重新流動
@@ -21,26 +23,26 @@
       </div>
 
       <!-- 功能特色 -->
-      <div class="mb-12 grid gap-8 md:grid-cols-3">
+      <div class="introduce-card mb-12 grid gap-8 md:grid-cols-3">
         <div class="card text-center">
-          <div class="mb-4 text-3xl">🔍</div>
+          <div class="emoji mb-4 text-3xl">🔍</div>
           <h3 class="mb-2 text-lg font-semibold">智能搜尋增強</h3>
           <p class="text-sm text-gray-600">自動推薦相關的已收藏內容</p>
         </div>
         <div class="card text-center">
-          <div class="mb-4 text-3xl">🧠</div>
+          <div class="emoji mb-4 text-3xl">🧠</div>
           <h3 class="mb-2 text-lg font-semibold">語義分析</h3>
           <p class="text-sm text-gray-600">提取關鍵字，理解內容本質</p>
         </div>
         <div class="card text-center">
-          <div class="mb-4 text-3xl">⚡</div>
+          <div class="emoji mb-4 text-3xl">⚡</div>
           <h3 class="mb-2 text-lg font-semibold">一鍵收藏</h3>
           <p class="text-sm text-gray-600">讓收藏變得簡單快速</p>
         </div>
       </div>
 
       <!-- 統計資訊 -->
-      <div class="card mb-12">
+      <div class="analyze-card card mb-12">
         <h3 class="mb-4 text-lg font-semibold">快速統計</h3>
         <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div class="text-center">
@@ -63,6 +65,8 @@
           </div>
         </div>
       </div>
+
+      <!-- 操作按鈕 -->
       <div class="flex justify-center gap-4">
         <button
           v-if="!selectedFile"
@@ -71,7 +75,7 @@
         >
           新增書籤
         </button>
-        <div class="flex flex-col sm:flex-row items-center">
+        <div class="flex flex-col items-center sm:flex-row">
           <div class="file-upload">
             <input
               type="file"
@@ -83,17 +87,17 @@
             />
             <label
               for="customFileInput"
-              class="btn-shape bg-viridian-green-500 text-white cursor-pointer"
+              class="btn-shape bg-viridian-green-500 cursor-pointer text-white"
             >
               匯入書籤
             </label>
-            <span v-if="selectedFile" class="text-sm px-4">{{
+            <span v-if="selectedFile" class="px-4 text-sm">{{
               selectedFile.name
             }}</span>
           </div>
           <button
             v-if="selectedFile"
-            class="btn-shape bg-amber-400 text-white mt-4 sm:mt-0"
+            class="btn-shape mt-4 bg-amber-400 text-white sm:mt-0"
             @click="uploadFile"
           >
             開始上傳
@@ -112,7 +116,7 @@ import { useBookmarkStore } from '@/stores/bookmark'
 import { storeToRefs } from 'pinia'
 import AddNewBookmarkModal from '@/components/AddNewBookmarkModal.vue'
 import TheHeader from '@/components/base/TheHeader.vue'
-import { animate, utils, createSpring } from 'animejs'
+import { animate, createSpring } from 'animejs'
 
 const bookmarkStore = useBookmarkStore()
 const { bookmarkCount } = storeToRefs(bookmarkStore)
@@ -148,18 +152,48 @@ const uploadFile = async () => {
     }
   }
 }
-function TitleAnimation() {
-  animate('h2', {
-    scale: [
-      { to: 1.1, ease: 'inOut(3)', duration: 200 },
-      { to: 1, ease: createSpring({ stiffness: 300 }) }
+
+function CardAnimation() {
+  animate('.card', {
+    translateY: {
+      from: 16,
+      duration: 500,
+      delay: (_, i) => i * 100
+    }
+  })
+}
+
+function EmojiAnimation() {
+  animate('.emoji', {
+    translateY: [
+      { to: 8, ease: 'inOut(3)', duration: 200, delay: (_, i) => i * 300 },
+      { to: 0, ease: createSpring({ stiffness: 300 }) }
     ],
     loop: true,
+    loopDelay: 700
+  })
+}
+
+function TitleAnimation() {
+  animate('h2 span', {
+    rotate: {
+      from: '-1turn'
+    },
+    delay: (_, i) => i * 50,
+    ease: 'inOutCirc',
     loopDelay: 250
   })
 }
 
 onMounted(() => {
+  EmojiAnimation()
   TitleAnimation()
+  CardAnimation()
 })
 </script>
+<style scoped>
+h2 span {
+  display: inline-block;
+  padding: 0 0.25rem;
+}
+</style>
