@@ -9,33 +9,7 @@
     </TheHeader>
     <h1 class="pt-4 text-center">Bookmarks</h1>
     <div class="mx-auto my-4 max-w-4xl text-center">
-      <div class="file-upload mb-4 flex flex-col items-center">
-        <input
-          type="file"
-          ref="fileInput"
-          @change="onFileChange"
-          accept=".html,.json"
-          class="hidden"
-          id="customFileInput"
-        />
-        <label
-          for="customFileInput"
-          class="btn-shape bg-si w-36 cursor-pointer"
-        >
-          選擇檔案
-        </label>
-        <span v-if="selectedFile" class="mt-2 text-sm">{{
-          selectedFile.name
-        }}</span>
-      </div>
-      <button
-        v-if="selectedFile"
-        @click="uploadFile"
-        class="btn-shape w-36 bg-gradient-to-r from-amber-400 to-orange-600 text-white"
-        :disabled="bookmarkStore.isLoading"
-      >
-        開始上傳
-      </button>
+   
     </div>
     <div v-if="bookmarkStore.isLoading">Loading...</div>
     <div v-else-if="bookmarkStore.error">Error: {{ bookmarkStore.error }}</div>
@@ -101,27 +75,7 @@ const bookmarkStore = useBookmarkStore();
 const updateModalShow = ref(false);
 const selectedBookmark = ref<Bookmark | null>(null);
 
-const fileInput = ref<HTMLInputElement | null>(null);
-const selectedFile = ref<File | null>(null);
 
-const onFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files.length > 0) {
-    selectedFile.value = target.files[0];
-  } else {
-    selectedFile.value = null;
-  }
-};
-
-const uploadFile = async () => {
-  if (selectedFile.value) {
-    await bookmarkStore.uploadBookmarksFile(selectedFile.value);
-    selectedFile.value = null;
-    if (fileInput.value) {
-      fileInput.value.value = "";
-    }
-  }
-};
 
 const deleteBookmark = (id: number) => {
   bookmarkStore.deleteBookmarkData(id);

@@ -5,12 +5,23 @@
   --color-er: #5e8b7e;
   --color-san: #a7c4bc;
   --color-si: #dfeeea;
+  --color-viridian-green-50: #f5f8f8;
+  --color-viridian-green-100: #ddeae5;
+  --color-viridian-green-200: #bad5cc;
+  --color-viridian-green-300: #90b8ab;
+  --color-viridian-green-400: #5e8b7e;
+  --color-viridian-green-500: #4e7e71;
+  --color-viridian-green-600: #3d645b;
+  --color-viridian-green-700: #33524a;
+  --color-viridian-green-800: #2c433d;
+  --color-viridian-green-900: #283935;
+  --color-viridian-green-950: #13201d;
 }
 
 /* 自定義樣式 */
 @layer base {
   body {
-    @apply bg-san text-amber-900;
+    @apply bg-viridian-green-50 text-amber-900;
   }
 }
 
@@ -28,7 +39,7 @@
   }
 
   .card {
-    @apply bg-si rounded-lg border border-gray-200 p-4 shadow-sm;
+    @apply bg-viridian-green-50 rounded-lg border border-gray-200 p-4 shadow-sm;
   }
 
   .input-field {
