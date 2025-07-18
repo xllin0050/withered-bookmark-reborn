@@ -25,10 +25,17 @@ export const useSearchStore = defineStore('search', () => {
     }
   }
 
+  function clearSearch() {
+    results.value = [];
+    isLoading.value = false;
+    error.value = null;
+  }
+
   return {
     results,
     isLoading,
     error,
     performSearch,
+    clearSearch,
   };
 });
