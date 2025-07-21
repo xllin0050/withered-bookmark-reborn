@@ -3,7 +3,6 @@
     <!-- 導航欄 -->
     <TheHeader>
       <template #actions>
-        <RouterLink to="/search" class="btn-secondary"> 搜尋 </RouterLink>
         <RouterLink to="/bookmarks" class="btn-primary"> 我的書籤 </RouterLink>
       </template>
     </TheHeader>

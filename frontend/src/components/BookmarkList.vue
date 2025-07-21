@@ -13,13 +13,13 @@
         :buffer="200"
       >
         <template #default="props">
-          <div class="bg-si border-er hover:border-yi group h-24">
+          <div class="bg-viridian-green-100 h-24 group overflow-hidden">
             <a
               :href="props.item.url"
               target="_blank"
               class="relative block h-full w-full p-4"
             >
-              <h3 class="text-lg font-semibold">{{ props.item.title }}</h3>
+              <h3 class="text-lg text-viridian-green-700 font-semibold">{{ props.item.title }}</h3>
               <p class="mt-2 text-sm text-gray-600">
                 {{ props.item.description }}
               </p>
@@ -27,13 +27,13 @@
                 class="absolute top-1/2 right-0 hidden -translate-y-1/2 p-2 group-hover:block"
               >
                 <button
-                  class="btn-shape bg-er text-si mr-2"
+                  class="btn-shape bg-viridian-green-300 hover:bg-viridian-green-400 text-viridian-green-50 mr-2 shadow-xl"
                   @click.prevent="$emit('update', props.item)"
                 >
                   Update
                 </button>
                 <button
-                  class="btn-shape bg-amber-400 text-red-600"
+                  class="btn-shape bg-amber-300 hover:bg-amber-400 text-viridian-green-50 shadow-xl"
                   @click.prevent="$emit('delete', props.item.id)"
                 >
                   Delete

@@ -17,7 +17,7 @@
       <button
         type="submit"
         :disabled="isLoading"
-        class="h-12 rounded-lg bg-gradient-to-r from-amber-400 to-orange-600 px-6 font-semibold text-white shadow transition hover:from-indigo-700 hover:to-orange-600 focus:ring-2 focus:ring-indigo-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        class="from-viridian-green-300 to-viridian-green-500 h-12 rounded-lg bg-gradient-to-r px-6 font-semibold text-white shadow transition hover:from-amber-300 hover:to-amber-500 focus:ring-2 focus:ring-indigo-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
         :aria-label="isLoading ? '搜尋中' : '開始搜尋'"
       >
         <span v-if="!isLoading">搜尋</span>
@@ -35,7 +35,7 @@
         清除搜尋，顯示全部書籤
       </button>
       <p v-else class="mt-2 text-slate-600">
-        目前顯示全部書籤 ({{ totalBookmarks }})
+        已經儲存 {{ totalBookmarks }} 個書籤
       </p>
     </div>
   </div>

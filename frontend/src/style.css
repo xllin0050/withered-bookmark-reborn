@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --color-yi: #2f5d62;
-  --color-er: #5e8b7e;
-  --color-san: #a7c4bc;
-  --color-si: #dfeeea;
   --color-viridian-green-50: #f5f8f8;
   --color-viridian-green-100: #ddeae5;
   --color-viridian-green-200: #bad5cc;
@@ -31,7 +27,7 @@
   }
 
   .btn-secondary {
-    @apply text-yi rounded-lg bg-amber-300 px-4 py-2 font-medium transition-colors hover:bg-amber-400;
+    @apply text-viridian-green-900 rounded-lg bg-amber-300 px-4 py-2 font-medium transition-colors hover:bg-amber-400;
   }
 
   .btn-shape {

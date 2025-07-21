@@ -3,7 +3,6 @@
     <!-- 導航欄 -->
     <TheHeader>
       <template #actions>
-        <RouterLink to="/search" class="btn-secondary"> 搜尋 </RouterLink>
         <RouterLink to="/" class="btn-primary"> 首頁 </RouterLink>
       </template>
     </TheHeader>
@@ -31,7 +30,7 @@
       :bookmarks="bookmarkStore.bookmarks"
       :is-loading="bookmarkStore.isLoading"
       :error="bookmarkStore.error"
-      class="mx-auto mt-12 max-w-4xl"
+      class="mx-auto mt-12 max-w-4xl px-4 sm:px-0"
       @update="updateBookmark"
       @delete="deleteBookmark"
     />
@@ -69,12 +68,8 @@ const {
   clearSearch
 } = useBookmarkSearch()
 
-const {
-  updateModalShow,
-  selectedBookmark,
-  updateBookmark,
-  handleModalClose
-} = useBookmarkModal()
+const { updateModalShow, selectedBookmark, updateBookmark, handleModalClose } =
+  useBookmarkModal()
 
 const deleteBookmark = (id: number) => {
   bookmarkStore.deleteBookmarkData(id)
@@ -86,5 +81,3 @@ onMounted(() => {
   }
 })
 </script>
-
-
