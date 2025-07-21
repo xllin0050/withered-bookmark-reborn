@@ -9,17 +9,21 @@
         class="scroller"
         :items="bookmarks"
         :item-size="100"
+        item-class="bookmark-item"
         key-field="id"
         :buffer="200"
+        @visible="scrollVisible"
       >
         <template #default="props">
-          <div class="bg-viridian-green-100 h-24 group overflow-hidden">
+          <div class="bg-viridian-green-100 group h-24 overflow-hidden">
             <a
               :href="props.item.url"
               target="_blank"
               class="relative block h-full w-full p-4"
             >
-              <h3 class="text-lg text-viridian-green-700 font-semibold">{{ props.item.title }}</h3>
+              <h3 class="text-viridian-green-700 text-lg font-semibold">
+                {{ props.item.title }}
+              </h3>
               <p class="mt-2 text-sm text-gray-600">
                 {{ props.item.description }}
               </p>
@@ -33,7 +37,7 @@
                   Update
                 </button>
                 <button
-                  class="btn-shape bg-amber-300 hover:bg-amber-400 text-viridian-green-50 shadow-xl"
+                  class="btn-shape text-viridian-green-50 bg-amber-300 shadow-xl hover:bg-amber-400"
                   @click.prevent="$emit('delete', props.item.id)"
                 >
                   Delete
@@ -47,6 +51,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { createTimeline, stagger } from 'animejs'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import type { Bookmark } from '@/types/bookmark'
@@ -64,6 +69,17 @@ interface Emits {
 
 defineProps<Props>()
 defineEmits<Emits>()
+
+function scrollVisible() {
+  const timeline = createTimeline({ loop: false, alternate: false })
+
+  timeline.add('.bookmark-item', {
+    opacity: { from: 0},
+    duration: 800,
+    delay: stagger(100, { from: 'first' })
+  })
+}
+
 </script>
 
 <style scoped>
