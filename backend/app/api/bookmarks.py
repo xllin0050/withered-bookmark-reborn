@@ -8,6 +8,7 @@ from app.models.database import Bookmark, get_db
 from app.models.schemas import BookmarkCreate, BookmarkResponse, BookmarkUpdate  # noqa: F401
 from app.services.bookmark_importer import parse_and_import_bookmarks
 from app.services.content_enricher import ContentEnricher
+from app.services.tfidf_vectorizer import get_vectorizer, reset_vectorizer
 
 router = APIRouter()
 
@@ -159,6 +160,221 @@ async def enrich_bookmark(
     return {"message": "Content enrichment started"}
 
 
+@router.post("/bookmarks/batch-vectorize", status_code=status.HTTP_202_ACCEPTED)
+async def batch_vectorize_bookmarks(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """批量為所有書籤生成 TF-IDF 向量"""
+    
+    # 計算需要處理的書籤數量
+    total_bookmarks = db.query(Bookmark).filter(
+        Bookmark.content.isnot(None),
+        Bookmark.content != ""
+    ).count()
+    
+    if total_bookmarks == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No bookmarks with content found for vectorization"
+        )
+    
+    # 添加背景任務
+    background_tasks.add_task(batch_vectorize_task)
+    
+    return {
+        "message": f"Batch vectorization started for {total_bookmarks} bookmarks",
+        "total_bookmarks": total_bookmarks
+    }
+
+
+@router.post("/bookmarks/retrain-vectorizer", status_code=status.HTTP_202_ACCEPTED)
+async def retrain_vectorizer(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """重新訓練 TF-IDF 向量化器並為所有書籤生成新向量"""
+    
+    total_bookmarks = db.query(Bookmark).filter(
+        Bookmark.content.isnot(None),
+        Bookmark.content != ""
+    ).count()
+    
+    if total_bookmarks == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No bookmarks with content found for training"
+        )
+    
+    # 重置向量化器並添加重新訓練任務
+    reset_vectorizer()
+    background_tasks.add_task(retrain_and_vectorize_task)
+    
+    return {
+        "message": f"Vectorizer retraining started for {total_bookmarks} bookmarks",
+        "total_bookmarks": total_bookmarks
+    }
+
+
+def batch_vectorize_task():
+    """背景任務：為現有書籤批量生成向量"""
+    from app.models.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        print("Starting batch vectorization...")
+        
+        # 獲取所有有內容的書籤
+        bookmarks = db.query(Bookmark).filter(
+            Bookmark.content.isnot(None),
+            Bookmark.content != ""
+        ).all()
+        
+        if not bookmarks:
+            print("No bookmarks found for vectorization")
+            return
+        
+        # 確保向量化器已訓練
+        vectorizer = get_vectorizer()
+        if not vectorizer.vectorizer:
+            print("Training vectorizer with existing bookmarks...")
+            texts = []
+            for bookmark in bookmarks:
+                text_parts = []
+                if bookmark.title:
+                    text_parts.append(bookmark.title)
+                if bookmark.description:
+                    text_parts.append(bookmark.description)
+                if bookmark.content:
+                    text_parts.append(bookmark.content)
+                if bookmark.keywords and isinstance(bookmark.keywords, list):
+                    text_parts.extend(bookmark.keywords)
+                
+                if text_parts:
+                    texts.append(" ".join(text_parts))
+            
+            if texts:
+                vectorizer.fit(texts)
+                print(f"Vectorizer trained with {len(texts)} texts")
+        
+        # 為每個書籤生成向量
+        processed_count = 0
+        error_count = 0
+        
+        for bookmark in bookmarks:
+            try:
+                # 生成 TF-IDF 向量
+                tfidf_vector = content_enricher.generate_tfidf_vector(
+                    bookmark.title or "",
+                    bookmark.description or "",
+                    bookmark.content or "",
+                    bookmark.keywords or []
+                )
+                
+                if tfidf_vector:
+                    bookmark.tfidf_vector = tfidf_vector
+                    bookmark.updated_at = datetime.now(timezone.utc)
+                    processed_count += 1
+                else:
+                    print(f"Failed to generate vector for bookmark {bookmark.id}")
+                    error_count += 1
+                    
+            except Exception as e:
+                print(f"Error processing bookmark {bookmark.id}: {e}")
+                error_count += 1
+        
+        # 批量提交更改
+        try:
+            db.commit()
+            print(f"Batch vectorization completed: {processed_count} processed, {error_count} errors")
+        except Exception as e:
+            db.rollback()
+            print(f"Error committing batch updates: {e}")
+            
+    except Exception as e:
+        print(f"Error in batch vectorization task: {e}")
+    finally:
+        db.close()
+
+
+def retrain_and_vectorize_task():
+    """背景任務：重新訓練向量化器並生成所有向量"""
+    from app.models.database import SessionLocal
+    
+    db = SessionLocal()
+    try:
+        print("Starting vectorizer retraining and batch vectorization...")
+        
+        # 獲取所有有內容的書籤
+        bookmarks = db.query(Bookmark).filter(
+            Bookmark.content.isnot(None),
+            Bookmark.content != ""
+        ).all()
+        
+        if not bookmarks:
+            print("No bookmarks found for retraining")
+            return
+        
+        # 收集所有文本用於訓練
+        print("Collecting texts for training...")
+        texts = []
+        for bookmark in bookmarks:
+            text_parts = []
+            if bookmark.title:
+                text_parts.append(bookmark.title)
+            if bookmark.description:
+                text_parts.append(bookmark.description)
+            if bookmark.content:
+                text_parts.append(bookmark.content)
+            if bookmark.keywords and isinstance(bookmark.keywords, list):
+                text_parts.extend(bookmark.keywords)
+            
+            if text_parts:
+                texts.append(" ".join(text_parts))
+        
+        if not texts:
+            print("No texts found for training")
+            return
+        
+        # 重新訓練向量化器
+        print(f"Training vectorizer with {len(texts)} texts...")
+        vectorizer = get_vectorizer()
+        vectorizer.fit(texts)
+        print("Vectorizer training completed")
+        
+        # 為所有書籤生成新向量
+        print("Generating vectors for all bookmarks...")
+        processed_count = 0
+        error_count = 0
+        
+        for bookmark in bookmarks:
+            try:
+                tfidf_vector = content_enricher.generate_tfidf_vector(
+                    bookmark.title or "",
+                    bookmark.description or "",
+                    bookmark.content or "",
+                    bookmark.keywords or []
+                )
+                
+                if tfidf_vector:
+                    bookmark.tfidf_vector = tfidf_vector
+                    bookmark.updated_at = datetime.now(timezone.utc)
+                    processed_count += 1
+                else:
+                    error_count += 1
+                    
+            except Exception as e:
+                print(f"Error processing bookmark {bookmark.id}: {e}")
+                error_count += 1
+        
+        # 提交所有更改
+        try:
+            db.commit()
+            print(f"Retraining and vectorization completed: {processed_count} processed, {error_count} errors")
+        except Exception as e:
+            db.rollback()
+            print(f"Error committing updates: {e}")
+            
+    except Exception as e:
+        print(f"Error in retraining task: {e}")
+    finally:
+        db.close()
+
+
 def enrich_bookmark_content(bookmark_id: int, url: str):
     """背景任務：抓取並處理網頁內容"""
     import asyncio
@@ -176,7 +392,7 @@ def enrich_bookmark_content(bookmark_id: int, url: str):
         content_data = asyncio.run(content_enricher.extract_content(url))
 
         if content_data:
-            # 更新書籤
+            # 更新書籤內容
             bookmark.content = content_data.get("content", "")
             # 直接將列表賦值給 JSON 欄位
             bookmark.keywords = content_data.get("keywords", [])
@@ -184,6 +400,10 @@ def enrich_bookmark_content(bookmark_id: int, url: str):
                 bookmark.title = content_data["title"]
             if content_data.get("description") and not bookmark.description:
                 bookmark.description = content_data["description"]
+
+            # 更新 TF-IDF 向量
+            if content_data.get("tfidf_vector"):
+                bookmark.tfidf_vector = content_data["tfidf_vector"]
 
             bookmark.updated_at = datetime.now(timezone.utc)
             db.commit()

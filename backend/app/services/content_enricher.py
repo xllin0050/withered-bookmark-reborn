@@ -9,6 +9,8 @@ import jieba
 import jieba.analyse
 from bs4 import BeautifulSoup
 
+from .tfidf_vectorizer import get_vectorizer
+
 
 class ContentEnricher:
     def __init__(self):
@@ -101,6 +103,9 @@ class ContentEnricher:
             # 生成摘要
             summary = self.generate_summary(clean_content)
 
+            # 生成 TF-IDF 向量
+            tfidf_vector = self.generate_tfidf_vector(title, description, clean_content, keywords)
+
             return {
                 "title": title,
                 "description": description or summary,  # 如果沒有 description，使用摘要
@@ -108,6 +113,7 @@ class ContentEnricher:
                 "content": clean_content,
                 "keywords": keywords,  # 直接返回列表
                 "summary": summary,
+                "tfidf_vector": tfidf_vector,
             }
 
         except Exception as e:
@@ -340,3 +346,76 @@ class ContentEnricher:
             summary += "。"
 
         return summary
+
+    def generate_tfidf_vector(self, title: str, description: str, content: str, keywords: List[str]) -> Optional[str]:
+        """
+        生成書籤的 TF-IDF 向量
+        
+        Args:
+            title: 書籤標題
+            description: 書籤描述
+            content: 書籤內容
+            keywords: 關鍵字列表
+            
+        Returns:
+            TF-IDF 向量 JSON 字符串或 None
+        """
+        try:
+            # 組合所有文本內容
+            combined_text = []
+            
+            # 標題權重較高，重複 3 次
+            if title:
+                combined_text.extend([title] * 3)
+                
+            # 描述權重中等，重複 2 次
+            if description:
+                combined_text.extend([description] * 2)
+                
+            # 關鍵字權重較高，重複 2 次
+            if keywords:
+                keywords_text = " ".join(keywords)
+                combined_text.extend([keywords_text] * 2)
+                
+            # 內容權重正常，添加 1 次
+            if content:
+                combined_text.append(content)
+                
+            if not combined_text:
+                return None
+                
+            # 合併所有文本
+            full_text = " ".join(combined_text)
+            
+            # 使用向量化器生成向量
+            vectorizer = get_vectorizer()
+            vector_data = vectorizer.transform(full_text)
+            
+            return vector_data
+            
+        except Exception as e:
+            print(f"Error generating TF-IDF vector: {str(e)}")
+            return None
+
+    def generate_tfidf_vector_for_query(self, query: str) -> Optional[str]:
+        """
+        為搜索查詢生成 TF-IDF 向量
+        
+        Args:
+            query: 搜索查詢文本
+            
+        Returns:
+            TF-IDF 向量 JSON 字符串或 None
+        """
+        try:
+            if not query or not query.strip():
+                return None
+                
+            vectorizer = get_vectorizer()
+            vector_data = vectorizer.transform(query.strip())
+            
+            return vector_data
+            
+        except Exception as e:
+            print(f"Error generating TF-IDF vector for query: {str(e)}")
+            return None

@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,12 +7,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.bookmarks import router as bookmarks_router
 from app.api.search import router as search_router
 from app.models.database import create_tables
+from app.services.tfidf_vectorizer import train_vectorizer_if_needed
+
+# 設定日誌記錄
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 @asynccontextmanager
 async def lifespan(app):
     # 啟動時執行的初始化程式碼
     create_tables()  # 啟動時自動建立資料表
+    train_vectorizer_if_needed()  # 啟動時訓練 TF-IDF 模型
     yield
     # 關閉時執行的清理程式碼
 
