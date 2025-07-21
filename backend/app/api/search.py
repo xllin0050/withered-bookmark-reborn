@@ -1,7 +1,9 @@
 import json
+import logging
+import time
 from typing import List, Tuple
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session
 
@@ -16,13 +18,15 @@ from app.models.schemas import (
 from app.services.content_enricher import ContentEnricher
 from app.services.tfidf_vectorizer import get_vectorizer
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 content_enricher = ContentEnricher()
 
 
-def _semantic_search(query: str, bookmarks: List[Bookmark], limit: int = 20) -> List[Tuple[Bookmark, float]]:
+def _semantic_search(query: str, bookmarks: List[Bookmark], limit: int = 20) -> Tuple[List[Tuple[Bookmark, float]], dict]:
     """
-    執行語義搜索，返回按相關性排序的書籤列表
+    執行語義搜索，返回按相關性排序的書籤列表和性能指標
     
     Args:
         query: 搜索查詢
@@ -30,54 +34,76 @@ def _semantic_search(query: str, bookmarks: List[Bookmark], limit: int = 20) -> 
         limit: 返回結果數量限制
         
     Returns:
-        (書籤, 相關性分數) 的列表，按相關性降序排列
+        ((書籤, 相關性分數) 的列表，性能指標字典)
     """
+    start_time = time.time()
+    metrics = {
+        "total_candidates": len(bookmarks),
+        "vector_generation_time": 0,
+        "similarity_calculations": 0,
+        "similarity_calculation_time": 0,
+        "vectors_found": 0,
+        "vectors_missing": 0
+    }
+    
     try:
         # 為查詢生成向量
+        vector_start = time.time()
         query_vector = content_enricher.generate_tfidf_vector_for_query(query)
+        metrics["vector_generation_time"] = time.time() - vector_start
+        
         if not query_vector:
-            return [(bookmark, 1.0) for bookmark in bookmarks[:limit]]
+            logger.warning(f"Failed to generate vector for query: {query}")
+            metrics["total_time"] = time.time() - start_time
+            return [(bookmark, 1.0) for bookmark in bookmarks[:limit]], metrics
 
         vectorizer = get_vectorizer()
         results = []
+        similarity_start = time.time()
+        
+        # 準備批量相似度計算的數據
+        bookmark_vectors = []
+        bookmarks_by_id = {}
         
         for bookmark in bookmarks:
-            try:
-                # 解析書籤的 TF-IDF 向量
-                bookmark_vector = None
-                if bookmark.tfidf_vector:
-                    if isinstance(bookmark.tfidf_vector, str):
-                        bookmark_vector = json.loads(bookmark.tfidf_vector)
-                    else:
-                        bookmark_vector = bookmark.tfidf_vector
-                
-                # 計算相似度
-                if bookmark_vector:
-                    # 確保兩個向量都是字符串格式
-                    bookmark_vector_str = bookmark_vector if isinstance(bookmark_vector, str) else json.dumps(bookmark_vector)
-                    query_vector_str = query_vector if isinstance(query_vector, str) else json.dumps(query_vector)
-                    
-                    similarity = vectorizer.calculate_similarity(query_vector_str, bookmark_vector_str)
+            if bookmark.tfidf_vector:
+                bookmark_vectors.append((str(bookmark.id), bookmark.tfidf_vector))
+                bookmarks_by_id[str(bookmark.id)] = bookmark
+        
+        # 使用批量相似度計算（更高效）
+        if bookmark_vectors:
+            similarity_results = vectorizer.calculate_batch_similarity(query_vector, bookmark_vectors)
+            
+            for bookmark_id, similarity_score in similarity_results:
+                bookmark = bookmarks_by_id.get(bookmark_id)
+                if bookmark:
                     # 為確保有基本相關性，給關鍵字匹配增加權重
                     keyword_bonus = _calculate_keyword_bonus(query, bookmark)
-                    final_score = similarity * 0.7 + keyword_bonus * 0.3
-                else:
-                    # 沒有向量的情況下，只使用關鍵字匹配分數
-                    final_score = _calculate_keyword_bonus(query, bookmark)
-                
+                    final_score = similarity_score * 0.7 + keyword_bonus * 0.3
+                    results.append((bookmark, final_score))
+                    metrics["similarity_calculations"] += 1
+                    metrics["vectors_found"] += 1
+        
+        # 處理沒有向量的書籤
+        for bookmark in bookmarks:
+            if not bookmark.tfidf_vector or str(bookmark.id) not in bookmarks_by_id:
+                metrics["vectors_missing"] += 1
+                final_score = _calculate_keyword_bonus(query, bookmark)
                 results.append((bookmark, final_score))
-                
-            except Exception as e:
-                print(f"Error calculating similarity for bookmark {bookmark.id}: {e}")
-                results.append((bookmark, 0.1))  # 給一個低分數
+        
+        metrics["similarity_calculation_time"] = time.time() - similarity_start
         
         # 按相關性分數排序
         results.sort(key=lambda x: x[1], reverse=True)
-        return results[:limit]
+        metrics["total_time"] = time.time() - start_time
+        
+        logger.info(f"Semantic search completed: {metrics}")
+        return results[:limit], metrics
         
     except Exception as e:
-        print(f"Error in semantic search: {e}")
-        return [(bookmark, 1.0) for bookmark in bookmarks[:limit]]
+        metrics["total_time"] = time.time() - start_time
+        logger.error(f"Error in semantic search: {e}")
+        return [(bookmark, 1.0) for bookmark in bookmarks[:limit]], metrics
 
 
 def _calculate_keyword_bonus(query: str, bookmark: Bookmark) -> float:
@@ -117,6 +143,10 @@ async def search_bookmarks(search_request: SearchRequest, db: Session = Depends(
     """智能搜尋書籤 - 結合關鍵字搜索和語義搜索"""
     query = search_request.query
     limit = search_request.limit
+    
+    # 開始計時總體性能
+    total_start_time = time.time()
+    logger.info(f"Starting search for query: '{query}' (limit: {limit})")
 
     if not query:
         return []
@@ -166,7 +196,16 @@ async def search_bookmarks(search_request: SearchRequest, db: Session = Depends(
                     vectorizer.fit(texts)
         
         # 執行語義搜索
-        semantic_results = _semantic_search(query, keyword_bookmarks, limit)
+        semantic_results, search_metrics = _semantic_search(query, keyword_bookmarks, limit)
+        
+        # 記錄搜尋性能指標
+        total_time = time.time() - total_start_time
+        logger.info(
+            f"Search completed in {total_time:.3f}s - "
+            f"Keyword candidates: {len(keyword_bookmarks)}, "
+            f"Semantic results: {len(semantic_results)}, "
+            f"Search metrics: {search_metrics}"
+        )
         
         # 格式化結果
         results: List[SearchResult] = []
@@ -192,7 +231,8 @@ async def search_bookmarks(search_request: SearchRequest, db: Session = Depends(
         return results
         
     except Exception as e:
-        print(f"Error in search: {e}")
+        total_time = time.time() - total_start_time
+        logger.error(f"Error in semantic search after {total_time:.3f}s: {e}")
         # 降級到基本關鍵字搜索
         basic_query = db.query(Bookmark).filter(
             or_(
@@ -235,3 +275,106 @@ async def analyze_url(request: AnalyzeUrlRequest):
         keywords=["示例", "關鍵字"],
         summary="這是一個示例摘要"
     )
+
+@router.get("/health")
+async def search_health_check(db: Session = Depends(get_db)):
+    """搜尋系統健康檢查"""
+    try:
+        vectorizer = get_vectorizer()
+        
+        # 檢查資料庫連接
+        total_bookmarks = db.query(Bookmark).count()
+        bookmarks_with_vectors = db.query(Bookmark).filter(
+            Bookmark.tfidf_vector.isnot(None),
+            Bookmark.tfidf_vector != ""
+        ).count()
+        
+        # 獲取向量化器狀態
+        is_vectorizer_trained = vectorizer.vectorizer is not None
+        cache_stats = vectorizer.get_cache_stats()
+        
+        # 系統狀態
+        system_status = "healthy"
+        issues = []
+        
+        if not is_vectorizer_trained and total_bookmarks > 0:
+            system_status = "degraded"
+            issues.append("Vectorizer not trained but bookmarks exist")
+        
+        if total_bookmarks > 0 and bookmarks_with_vectors / total_bookmarks < 0.5:
+            system_status = "degraded" 
+            issues.append(f"Low vectorization coverage: {bookmarks_with_vectors}/{total_bookmarks}")
+        
+        return {
+            "status": system_status,
+            "timestamp": time.time(),
+            "database": {
+                "total_bookmarks": total_bookmarks,
+                "vectorized_bookmarks": bookmarks_with_vectors,
+                "vectorization_coverage": bookmarks_with_vectors / total_bookmarks if total_bookmarks > 0 else 0
+            },
+            "vectorizer": {
+                "is_trained": is_vectorizer_trained,
+                "feature_count": len(vectorizer.feature_names),
+                "max_features": vectorizer.max_features
+            },
+            "cache": cache_stats,
+            "issues": issues
+        }
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {e}", exc_info=True)
+        return {
+            "status": "unhealthy",
+            "timestamp": time.time(),
+            "error": str(e),
+            "issues": ["Health check failed"]
+        }
+
+@router.get("/vectorizer/stats")
+async def get_vectorizer_stats():
+    """獲取向量化器統計資訊"""
+    try:
+        vectorizer = get_vectorizer()
+        cache_stats = vectorizer.get_cache_stats()
+        
+        return {
+            "vectorizer": {
+                "is_trained": vectorizer.vectorizer is not None,
+                "feature_count": len(vectorizer.feature_names),
+                "max_features": vectorizer.max_features,
+                "min_df": vectorizer.min_df,
+                "max_df": vectorizer.max_df
+            },
+            "cache": cache_stats,
+            "stop_words_count": len(vectorizer.stop_words)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting vectorizer stats: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting vectorizer statistics: {str(e)}"
+        )
+
+@router.post("/vectorizer/clear-cache")
+async def clear_vectorizer_cache():
+    """清空向量化器快取"""
+    try:
+        vectorizer = get_vectorizer()
+        old_size = len(vectorizer.similarity_cache)
+        vectorizer.clear_cache()
+        
+        logger.info(f"Cleared vectorizer cache (removed {old_size} entries)")
+        return {
+            "success": True,
+            "message": f"Cleared {old_size} cache entries",
+            "timestamp": time.time()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error clearing vectorizer cache: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error clearing cache: {str(e)}"
+        )
