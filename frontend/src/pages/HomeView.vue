@@ -13,11 +13,15 @@
       <div class="mb-12 text-center">
         <h2 class="py-8 text-2xl font-bold sm:text-4xl">
           <span>讓</span><span>沉</span><span>睡</span><span>的</span
-          ><span>書</span><span>籤</span><span>重</span><span>新</span
-          ><span>發</span><span>揮</span><span>價</span><span>值</span>
+          ><span>書</span><span>籤</span><br class="block sm:hidden" /><span
+            >重</span
+          ><span>新</span><span>發</span><span>揮</span><span>價</span
+          ><span>值</span>
         </h2>
         <p class="mb-8 text-base text-gray-600">
-          在你搜尋時自動推薦相關的已收藏內容，<br />智能書籤助手讓知識重新流動
+          在你搜尋時自動推薦相關的已收藏內容，<br
+            class="block sm:hidden"
+          />智能書籤助手讓知識重新流動
         </p>
       </div>
 
@@ -66,7 +70,7 @@
       </div>
 
       <!-- 操作按鈕 -->
-      <div class="flex justify-center gap-4">
+      <div class="flex items-center justify-center gap-4">
         <button
           v-if="!selectedFile"
           class="bg-viridian-green-500 rounded-lg px-4 py-2 font-medium text-white transition-colors hover:bg-yellow-400 hover:text-gray-500"
@@ -86,7 +90,7 @@
             />
             <label
               for="customFileInput"
-              class="btn-shape bg-viridian-green-500 cursor-pointer text-white"
+              class="block btn-shape bg-viridian-green-500 cursor-pointer text-white hover:bg-yellow-400 hover:text-gray-500"
             >
               匯入書籤
             </label>
