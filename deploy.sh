@@ -106,7 +106,7 @@ if ! sudo grep -q "withered-bookmark" "$CADDY_CONFIG" 2>/dev/null; then
 # Withered Bookmark Reborn
 ${DOMAIN} {
     # API 路由代理到後端
-    handle_path /api/* {
+    handle /api/* {
         reverse_proxy localhost:8000
     }
     
